@@ -1,4 +1,4 @@
-# tank.bench-haya                                                                                                                                                        
+# tank.bench-polkadot                                                                                                                                                       
                                                                                                                                                                          
 Benchmark for polkadot common module blockchain.                                                                                                                    
                                                                                                                                                                          
