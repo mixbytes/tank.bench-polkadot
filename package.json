@@ -1,0 +1,41 @@
+{
+  "name": "tank.bench-polkadot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx tsc",
+    "start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mixbytes/tank.bench-polkadot.git"
+  },
+  "author": "Boogerwooger",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/mixbytes/tank.bench-polkadot/issues"
+  },
+  "homepage": "https://github.com/mixbytes/tank.bench-polkadot#readme",
+  "dependencies": {
+    "@polkadot/api": "^0.77.1",
+    "@polkadot/keyring": "^0.76.1",
+    "node-fetch": "^2.5.0",
+    "polkadot": "^1.0.0",
+    "tank.bench-common": "^1.0.1",
+    "text-encoding": "^0.7.0",
+    "worker-threads": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node-fetch": "^2.3.3",
+    "@types/text-encoding": "0.0.35",
+    "source-map-support": "^0.5.12",
+    "typescript": "^3.4.5"
+  }
+}
