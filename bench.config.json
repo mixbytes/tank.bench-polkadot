@@ -5,9 +5,9 @@
   },
   "stopOn": {
     "error": "print",
-    "processedTransactions": 1000000
+    "processedTransactions": 10
   },
-  "threadsAmount": 8,
-  "maxActivePromises": 20,
+  "threadsAmount": 1,
+  "maxActivePromises": 2,
   "configFile": "./bench.config.json"
 }
