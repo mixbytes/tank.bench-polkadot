@@ -11,8 +11,4 @@ export default class Constants {
     static toRole() {
         return "TO"
     }
-
-    static configFilePath() {
-        return "./polkadot.bench.config.json"
-    }
 }

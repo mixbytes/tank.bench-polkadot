@@ -7,6 +7,7 @@ import PolkadotModulePrepareStep from "./steps/PolkadotModulePrepareStep";
 import convictConfig from "./config/convictConfig";
 import * as fs from "fs";
 import Constants from "./constants/Constants";
+import getConvict from "./config/convictConfig";
 
 export default class PolkadotModule implements BlockchainModule {
     createBenchStep(config: any, logger: Logger): BenchStep {
@@ -14,9 +15,11 @@ export default class PolkadotModule implements BlockchainModule {
     }
 
     createPrepareStep(config: any, logger: Logger): PrepareStep {
-        if (fs.existsSync(convictConfig.getProperties().configFile)) {
+        let convictConfig = getConvict();
+        let convictFile = convictConfig.getProperties().configFile;
+        if (fs.existsSync(convictFile)) {
             try {
-                convictConfig.loadFile(Constants.configFilePath());
+                convictConfig.loadFile(convictFile);
                 convictConfig.validate({allowed: 'strict'});
             } catch (e) {
                 console.error(e);
