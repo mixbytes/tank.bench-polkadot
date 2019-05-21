@@ -1,6 +1,5 @@
 const { ApiPromise, WsProvider } = require('@polkadot/api');
-import BenchStep from "tank.bench-common/dist/module/steps/BenchStep";
-import Strings from "../constants/Strings";
+import {BenchStep} from "tank.bench-common";
 
 const { Keyring } = require('@polkadot/keyring');
 const testKeyring = require('@polkadot/keyring/testing');
@@ -16,7 +15,7 @@ export default class PolkadotModuleBenchStep extends BenchStep {
         //this.keyring = new testKeyring.default();
         // ed25519 and sr25519
         this.keyring = new Keyring({ type: 'ed25519' });
-        this.api = await ApiPromise.create(new WsProvider(this.config.polkadot.wsUrl));
+        this.api = await ApiPromise.create(new WsProvider(this.benchConfig.wsUrl));
     }
 
     async commitBenchmarkTransaction(uniqueData: any) {

@@ -1,6 +1,5 @@
 const { ApiPromise, WsProvider } = require('@polkadot/api');
-import PrepareStep from "tank.bench-common/dist/module/steps/PrepareStep";
-import Strings from "../constants/Strings";
+import {PrepareStep} from "tank.bench-common";
 
 export default class PolkadotModulePrepareStep extends PrepareStep {
     private api?: any;
@@ -10,7 +9,7 @@ export default class PolkadotModulePrepareStep extends PrepareStep {
     }
 
     async prepare() {
-        return Promise.resolve(this.config);
+        return Promise.resolve(this.moduleConfig);
     }
 
     transact(actions: any[]): Promise<any> {

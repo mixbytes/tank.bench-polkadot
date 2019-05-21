@@ -28,7 +28,7 @@
     "@polkadot/keyring": "^0.76.1",
     "node-fetch": "^2.5.0",
     "polkadot": "^1.0.0",
-    "tank.bench-common": "^1.0.1",
+    "tank.bench-common": "^1.1.0",
     "text-encoding": "^0.7.0",
     "worker-threads": "^1.0.0"
   },

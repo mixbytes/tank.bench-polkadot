@@ -1,4 +1,4 @@
-import BenchRunner from "tank.bench-common";
+import {BenchRunner} from "tank.bench-common";
 import PolkadotModule from "./PolkadotModule";
 
 // noinspection JSIgnoredPromiseFromCall

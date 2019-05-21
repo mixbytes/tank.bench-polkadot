@@ -1,34 +1,3 @@
 {
-  "wsUrl": "ws://127.0.0.1:9944:",
-  "transactions": {
-    "tokenName": "SYS",
-    "deployTokenContract": true,
-    "createTokens": true,
-    "issueTokens": true,
-    "createTokensAmount": "1000000.0000",
-    "issueTokensAmount": "1000000.0000",
-    "tokensInOneTransfer": "0.0001",
-    "keyPoints": 10,
-    "keyPointsAmount": 1000,
-    "threadsAmount": 8,
-    "stopOnError": "print"
-  },
-  "creatorAccount": {
-    "name": "eosio",
-    "privateKey": "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
-  },
-  "toAccount": {
-    "create": true,
-    "name": ""
-  },
-  "fromAccount": {
-    "create": true,
-    "name": "",
-    "privateKey": ""
-  },
-  "tokenAccount": {
-    "create": true,
-    "name": "",
-    "privateKey": ""
-  }
+  "wsUrl": "ws://127.0.0.1:9944:"
 }
