@@ -1,12 +1,12 @@
 {
   "log": {
-    "keyPoints": 10,
+    "keyPoints": 1,
     "logLevel": 3
   },
   "stopOn": {
     "error": "print",
-    "processedTransactions": 100
+    "processedTransactions": 20
   },
   "threadsAmount": 1,
-  "maxActivePromises": 2
+  "maxActivePromises": 1
 }
