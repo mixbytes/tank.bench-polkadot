@@ -5,8 +5,8 @@
   },
   "stopOn": {
     "error": "print",
-    "processedTransactions": 20
+    "processedTransactions": 200
   },
-  "threadsAmount": 1,
+  "threadsAmount": 2,
   "maxActivePromises": 1
 }
