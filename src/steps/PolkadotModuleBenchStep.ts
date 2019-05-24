@@ -15,9 +15,8 @@ export default class PolkadotModuleBenchStep extends BenchStep {
 	private last_nonce?: any;
 	private txs?: any[];
 
-	padToFour(number:any) {
-		if (number <= 9999) { number = ("000"+number).slice(-4); }
-	 	return number;
+	getRandomBenchmarkUser() {
+		return "//user//" + ("000" + Math.floor(Math.random() * 1000)).slice(-4);
 	}
 
     async asyncConstruct() {
@@ -29,23 +28,26 @@ export default class PolkadotModuleBenchStep extends BenchStep {
         this.txs = [];
 	
 		// account having money on balance
-        this.sender_account_keypair = await this.keyring.addFromUri('//foo');
-        let  sender_balance = await this.api.query.balances.freeBalance(this.sender_account_keypair.address());
-        this.last_nonce = await this.api.query.system.accountNonce(this.sender_account_keypair.address());
-        await console.log("Sender account: " + this.sender_account_keypair.address() + ", balance: " + sender_balance + ", nonce: " + this.last_nonce);
+        // this.sender_account_keypair = await this.keyring.addFromUri('//foo');
+        // let  sender_balance = await this.api.query.balances.freeBalance(this.sender_account_keypair.address());
+        // this.last_nonce = await this.api.query.system.accountNonce(this.sender_account_keypair.address());
+        // await console.log("Sender account: " + this.sender_account_keypair.address() + ", balance: " + sender_balance + ", nonce: " + this.last_nonce);
     }
 
 
     async commitBenchmarkTransaction(uniqueData: any) {
-		let to_account = await this.keyring.addFromSeed(randomAsU8a(32));
-		const nonce = this.last_nonce;
-		this.last_nonce++;;
-		let seed = "//user" + this.padToFour(this.last_nonce);
-		await console.log("Nonce: " + this.last_nonce + ", Seed incremented: " + seed);
-		
-		
-		return this.api.tx.balances.transfer(to_account.address(), 123)
-					.sign(this.sender_account_keypair, { nonce } )
+		// this.last_nonce++;;
+		let acc1 = await this.keyring.addFromUri(this.getRandomBenchmarkUser());
+		let acc2 = await this.keyring.addFromUri(this.getRandomBenchmarkUser());
+		/*
+		let b1 = await this.api.query.balances.freeBalance(acc1.address());
+        await console.log("Sender account: " + acc1.address() + ", balance: " + b1);
+        let b2 = await this.api.query.balances.freeBalance(acc2.address());
+        await console.log("Receiver account: " + acc2.address() + ", balance: " + b2);
+		*/
+		const nonce = new BN(0);//this.last_nonce;
+		return this.api.tx.balances.transfer(acc2.address(), 123)
+					.sign(acc1, { nonce } )
 					.send((result: any) => {
 						// Log transfer events
 						let events = result.events;
@@ -62,7 +64,6 @@ export default class PolkadotModuleBenchStep extends BenchStep {
 							});
 						}
 					});
-							
 
     }
 }
