@@ -39,6 +39,10 @@ export default class PolkadotModuleBenchStep extends BenchStep {
 		// this.last_nonce++;;
 		let acc1 = await this.keyring.addFromUri(this.getRandomBenchmarkUser());
 		let acc2 = await this.keyring.addFromUri(this.getRandomBenchmarkUser());
+		while (acc2.address() == acc1.address()) {
+			acc2 = await this.keyring.addFromUri(this.getRandomBenchmarkUser());
+		}
+
 		/*
 		let b1 = await this.api.query.balances.freeBalance(acc1.address());
         await console.log("Sender account: " + acc1.address() + ", balance: " + b1);
