@@ -49,9 +49,10 @@ export default class PolkadotModuleBenchStep extends BenchStep {
         let b2 = await this.api.query.balances.freeBalance(acc2.address());
         await console.log("Receiver account: " + acc2.address() + ", balance: " + b2);
 		*/
-		const nonce = new BN(0);//this.last_nonce;
+		
+		const nonce = new BN(await this.api.query.system.accountNonce(acc1.address()));
 		try {
-			await this.api.tx.balances.transfer(acc2.address(), 1 + Math.floor(Math.random() * 999))
+			await this.api.tx.balances.transfer(acc2.address(), 1 + Math.floor(Math.random() * 9999))
 				.sign(acc1, {nonce})
 				.send((result: any) => {
 					// Log transfer events
@@ -67,6 +68,7 @@ export default class PolkadotModuleBenchStep extends BenchStep {
 							let event = item.event;
 							console.log('\t', phase.toString(), `: ${event.section}.${event.method}`, event.data.toString());
 						});
+						return 200;
 					}
 				});
 			return 200;
