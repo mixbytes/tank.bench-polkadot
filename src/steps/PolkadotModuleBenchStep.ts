@@ -4,7 +4,7 @@ import {BenchStep} from "tank.bench-common";
 const { Keyring } = require('@polkadot/keyring');
 const testKeyring = require('@polkadot/keyring/testing');
 const { hexToU8a, bufferToU8a } = require('@polkadot/util');
-const { randomAsU8a } = require('@polkadot/util-crypto');
+const { randomAsU8a, blake2AsHex } = require('@polkadot/util-crypto');
 const { BN }  = require('bn.js');
 
 
@@ -42,35 +42,36 @@ export default class PolkadotModuleBenchStep extends BenchStep {
 		while (acc2.address() == acc1.address()) {
 			acc2 = await this.keyring.addFromUri(this.getRandomBenchmarkUser());
 		}
-
-		/*
+        /* 
 		let b1 = await this.api.query.balances.freeBalance(acc1.address());
         await console.log("Sender account: " + acc1.address() + ", balance: " + b1);
         let b2 = await this.api.query.balances.freeBalance(acc2.address());
         await console.log("Receiver account: " + acc2.address() + ", balance: " + b2);
-		*/
-		
-		const nonce = new BN(await this.api.query.system.accountNonce(acc1.address()));
-		try {
+        */
+
+        const nonce = await this.api.query.system.accountNonce(acc1.address());
+        try {
 			await this.api.tx.balances.transfer(acc2.address(), 1 + Math.floor(Math.random() * 9999))
 				.sign(acc1, {nonce})
 				.send((result: any) => {
 					// Log transfer events
+                    const tx_id = blake2AsHex(acc1.address() + acc2.address() + nonce).substr(2, 8);
 					let events = result.events;
 					let status = result.status;
-					console.log('Transfer status:', status.type);
+                    console.log('[DEBUG] TX: ' + tx_id + ', tx status:', status.type);
 					// Log system events once the transfer is finalised
 					if (status.isFinalized) {
-						console.log('Completed at block hash', status.asFinalized.toHex());
-						console.log('Events:');
+						console.log('[DEBUG] TX: ' + tx_id + ', completed at block hash', status.asFinalized.toHex());
+                        console.log('Events:');
 						events.forEach((item: any) => {
 							let phase = item.phase;
 							let event = item.event;
 							console.log('\t', phase.toString(), `: ${event.section}.${event.method}`, event.data.toString());
-						});
+                        });
 						return 200;
 					}
-				});
+                })
+                .error((e:any) => {console.log("deeeee: " + e);});
 			return 200;
 		}
 		catch (e) {
