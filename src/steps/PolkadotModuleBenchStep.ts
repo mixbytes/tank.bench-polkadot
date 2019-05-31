@@ -51,7 +51,7 @@ export default class PolkadotModuleBenchStep extends BenchStep {
 		*/
 		const nonce = new BN(0);//this.last_nonce;
 		try {
-			await this.api.tx.balances.transfer(acc2.address(), 100 + Math.floor(Math.random() * 666000))
+			await this.api.tx.balances.transfer(acc2.address(), 1 + Math.floor(Math.random() * 999))
 				.sign(acc1, {nonce})
 				.send((result: any) => {
 					// Log transfer events
