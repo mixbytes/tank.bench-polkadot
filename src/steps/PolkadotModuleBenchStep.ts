@@ -15,8 +15,12 @@ export default class PolkadotModuleBenchStep extends BenchStep {
 	private last_nonce?: any;
 	private txs?: any[];
 
-	getRandomBenchmarkUser() {
+	getRandomBenchmarkUserSeed() {
 		return "//user//" + ("000" + Math.floor(Math.random() * 1000)).slice(-4);
+	}
+
+	getRandomTransferAmount() {
+		return Math.floor(Math.random() * 10000);
 	}
 
     async asyncConstruct() {
@@ -37,12 +41,12 @@ export default class PolkadotModuleBenchStep extends BenchStep {
 
     async commitBenchmarkTransaction(uniqueData: any) {
 		// this.last_nonce++;;
-		let acc1 = await this.keyring.addFromUri(this.getRandomBenchmarkUser());
-		let acc2 = await this.keyring.addFromUri(this.getRandomBenchmarkUser());
+		let acc1 = await this.keyring.addFromUri(this.getRandomBenchmarkUserSeed());
+		let acc2 = await this.keyring.addFromUri(this.getRandomBenchmarkUserSeed());
 		while (acc2.address() == acc1.address()) {
-			acc2 = await this.keyring.addFromUri(this.getRandomBenchmarkUser());
+			acc2 = await this.keyring.addFromUri(this.getRandomBenchmarkUserSeed());
 		}
-
+		
 		/*
 		let b1 = await this.api.query.balances.freeBalance(acc1.address());
         await console.log("Sender account: " + acc1.address() + ", balance: " + b1);
@@ -50,7 +54,7 @@ export default class PolkadotModuleBenchStep extends BenchStep {
         await console.log("Receiver account: " + acc2.address() + ", balance: " + b2);
 		*/
 		const nonce = new BN(0);//this.last_nonce;
-		return this.api.tx.balances.transfer(acc2.address(), 123)
+		return this.api.tx.balances.transfer(acc2.address(), 100 + Math.floor(Math.random() * 666000))
 					.sign(acc1, { nonce } )
 					.send((result: any) => {
 						// Log transfer events
@@ -60,12 +64,12 @@ export default class PolkadotModuleBenchStep extends BenchStep {
 						// Log system events once the transfer is finalised
 						if (status.isFinalized) {
 							console.log('Completed at block hash', status.asFinalized.toHex());
-							console.log('Events:');
-							events.forEach((item: any) => {
-								let phase = item.phase;
-								let event = item.event;
-								console.log('\t', phase.toString(), `: ${event.section}.${event.method}`, event.data.toString());
-							});
+							// console.log('Events:');
+							// events.forEach((item: any) => {
+							// 	let phase = item.phase;
+							// 	let event = item.event;
+							// 	console.log('\t', phase.toString(), `: ${event.section}.${event.method}`, event.data.toString());
+							// });
 						}
 					});
 
