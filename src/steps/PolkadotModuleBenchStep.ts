@@ -50,25 +50,30 @@ export default class PolkadotModuleBenchStep extends BenchStep {
         await console.log("Receiver account: " + acc2.address() + ", balance: " + b2);
 		*/
 		const nonce = new BN(0);//this.last_nonce;
-		return this.api.tx.balances.transfer(acc2.address(), 123)
-					.sign(acc1, { nonce } )
-					.send((result: any) => {
-						// Log transfer events
-						let events = result.events;
-						let status = result.status;
-						console.log('Transfer status:', status.type);
-						// Log system events once the transfer is finalised
-						if (status.isFinalized) {
-							console.log('Completed at block hash', status.asFinalized.toHex());
-							console.log('Events:');
-							events.forEach((item: any) => {
-								let phase = item.phase;
-								let event = item.event;
-								console.log('\t', phase.toString(), `: ${event.section}.${event.method}`, event.data.toString());
-							});
-						}
-					});
-
+		try {
+			await this.api.tx.balances.transfer(acc2.address(), 123)
+				.sign(acc1, {nonce})
+				.send((result: any) => {
+					// Log transfer events
+					let events = result.events;
+					let status = result.status;
+					console.log('Transfer status:', status.type);
+					// Log system events once the transfer is finalised
+					if (status.isFinalized) {
+						console.log('Completed at block hash', status.asFinalized.toHex());
+						console.log('Events:');
+						events.forEach((item: any) => {
+							let phase = item.phase;
+							let event = item.event;
+							console.log('\t', phase.toString(), `: ${event.section}.${event.method}`, event.data.toString());
+						});
+					}
+				});
+			return 200;
+		}
+		catch (e) {
+			return 500;
+		}
     }
 }
 
