@@ -5,6 +5,7 @@ export default class PolkadotModulePrepareStep extends PrepareStep {
     private api?: any;
 
     async asyncConstruct() {
+        // throw new Error("Add checks and throw error here to stop benchmark from running");
         // this.api = await ApiPromise.create(new WsProvider(this.config.polkadot.wsUrl));
     }
 
