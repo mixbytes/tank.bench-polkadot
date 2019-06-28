@@ -1,103 +1,145 @@
-const { ApiPromise, WsProvider } = require('@polkadot/api');
 import {BenchStep} from "tank.bench-common";
+import {Keyring} from "@polkadot/keyring";
+import {ApiPromise, WsProvider} from "@polkadot/api";
+import {KeyringPair} from "@polkadot/keyring/types";
+import {Balance, Index} from "@polkadot/types";
+import BN = require("bn.js");
 
-const { Keyring } = require('@polkadot/keyring');
-const testKeyring = require('@polkadot/keyring/testing');
-const { hexToU8a, bufferToU8a } = require('@polkadot/util');
-const { randomAsU8a, blake2AsHex } = require('@polkadot/util-crypto');
-const { BN }  = require('bn.js');
+// const testKeyring = require('@polkadot/keyring/testing');
+// const {hexToU8a, bufferToU8a} = require('@polkadot/util');
+// const {randomAsU8a, blake2AsHex} = require('@polkadot/util-crypto');
+// const {BN} = require('bn.js');
 
 
 export default class PolkadotModuleBenchStep extends BenchStep {
-    private api?: any;
-    private keyring?: any;
-    private sender_account_keypair?: any;
-    private current_sender: any = '';
-    private current_sender_nonces: any = [];
-    private current_sender_seed: string = '';
-    private current_seed: string = '0';
-    private current_seed_base: string = '//user//';
-    private current_amounts: any = [];
-    
+    private api!: ApiPromise;
+    private keyring!: Keyring;
+
+    private currentSenderKeyringPair!: KeyringPair;
+    private currentSenderSeed!: number;
+    private currentSenderNonce!: Index;
+
+    private amountToSendGlobal = 1;
+
+    private balances: Map<number, number> = new Map<number, number>();
+
     async timeout(ms: number) {
-            return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
+
+    private stringSeed(seed: number) {
+        return '//user//' + ("0000" + seed).slice(-4);
+    }
+
+    private getRandomSeed() {
+        return Math.floor(Math.random() * 1000);
+    }
+
     async asyncConstruct() {
         //this.keyring = new testKeyring.default();
         // ed25519 and sr25519
-        this.keyring = new Keyring({ type: 'sr25519' });
-        this.api = await ApiPromise.create(new WsProvider(this.benchConfig.wsUrl));
+        this.keyring = new Keyring({type: 'sr25519'});
+        this.api = await ApiPromise.create(new WsProvider(this.benchConfig.moduleConfig.wsUrl));
 
-        // choose one of pre-defined accounts with funds like "//user//0789"
-        let this_benchmark_seed = Math.floor(Math.random() * 1000 / 2);
+        const [chain, nodeName, nodeVersion] = await Promise.all([
+            this.api.rpc.system.chain(),
+            this.api.rpc.system.name(),
+            this.api.rpc.system.version()
+        ]);
 
-        this.current_sender_seed = this.current_seed_base + ("000" + this_benchmark_seed).slice(-4);
-        this.current_seed = this.getRandomReceiverSeed(this.current_sender_seed);
+        console.log(`You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`);
 
-        this.current_sender = await this.keyring.addFromUri(this.current_sender_seed);
-        this.current_sender_nonces[this.current_sender_seed] = await this.api.query.system.accountNonce(this.current_sender.address());
-
-        this.current_amounts[this.current_sender_seed] = await this.api.query.balances.freeBalance(this.current_sender.address())
-
+        await this.chooseNewSender()
     }
 
-    next_sender_seed(seed: string) {
-        // to get next sender form current pre-defined accounts
-        let intt = parseInt(seed.replace(/[^0-9]/g, ''), 10);
-		intt++;
-        intt = intt % 1000;
-        return this.current_seed_base + ("000" + intt).slice(-4);
-    }
-    
-    getRandomReceiverSeed(senderSeed: string) {
-        let seed: string = this.current_seed_base + ("000" + Math.floor(Math.random() * 1000)).slice(-4);
-        while (seed == senderSeed) {
-            seed = this.current_seed_base + ("000" + Math.floor(Math.random() * 1000)).slice(-4);
-        }
+    getRandomReceiverSeed() {
+        let seed = this.getRandomSeed();
+        if (seed === this.currentSenderSeed)
+            seed++;
+        seed %= 1000;
         return seed;
+    }
+
+    async chooseNewSender() {
+        this.currentSenderSeed = this.getRandomSeed();
+
+        this.currentSenderKeyringPair = this.keyring.addFromUri(this.stringSeed(this.currentSenderSeed));
+
+        let balance = <Balance>await this.api.query.balances.freeBalance(this.currentSenderKeyringPair.address);
+        this.balances.set(this.currentSenderSeed, balance.toNumber());
     }
 
     async commitBenchmarkTransaction(uniqueData: any) {
 
-        // switch to next sender after all funds of current_sender finished
-        if (!(this.current_sender_seed in this.current_amounts) || this.current_amounts[this.current_sender_seed] <= 1) {
+        // return {code: 10, error: null};
 
-            this.current_sender_seed = await this.next_sender_seed(this.current_sender_seed);
-            this.current_sender = await this.keyring.addFromUri(this.current_sender_seed);
-        	this.current_sender_nonces[this.current_sender_seed] = await this.api.query.system.accountNonce(this.current_sender.address());
-			this.current_amounts[this.current_sender_seed] = await this.api.query.balances.freeBalance(this.current_sender.address());
+        // switch to next sender after all funds of currentSenderKeyringPair finished
+
+        while (this.balances.get(this.currentSenderSeed)!! <= 1) {
+            await this.chooseNewSender()
         }
-        
-        
-        this.current_amounts[this.current_sender_seed] = Math.floor(this.current_amounts[this.current_sender_seed] / 2);
+
+        this.currentSenderNonce = <Index>await this.api.query.system.accountNonce(this.currentSenderKeyringPair.address);
 
 
-        this.current_seed  = this.getRandomReceiverSeed(this.current_sender_seed);
-        let receiver = await this.keyring.addFromUri(this.current_seed);
-        let previous = await this.api.query.balances.freeBalance(receiver.address());
-        let sender_balance = await this.api.query.balances.freeBalance(this.current_sender.address());
-		this.current_sender_nonces[this.current_sender_seed]++;
+        // To be sure the receiver and sender are not equal
+        let receiverSeed = this.getRandomReceiverSeed();
+        let receiverKeyringPair = await this.keyring.addFromUri(this.stringSeed(receiverSeed));
 
-        try {
-            // now useless
-            let signed_tx = this.api.tx.balances.transfer(receiver.address(), this.current_amounts[this.current_sender_seed])
-            	.sign(this.current_sender, { nonce: this.current_sender_nonces[this.current_sender_seed] });
-            console.log('[DEBUG] Prepared TX: nonce: ' + this.current_sender_nonces[this.current_sender_seed] + ', from: ' + this.current_sender_seed + '(balance: ' + sender_balance + '), to ' + this.current_seed + ", sending " + this.current_amounts[this.current_sender_seed] );
-            return await this.api.tx.balances.transfer(receiver.address(), this.current_amounts[this.current_sender_seed])
-											.sign(this.current_sender, { nonce: this.current_sender_nonces[this.current_sender_seed] })
-											.send((result: any) => {
-                                        console.log('[DEBUG] Status of TX: nonce: ' + this.current_sender_nonces[this.current_sender_seed] + ', from: ' + this.current_sender_seed + '(balance: ' + sender_balance + '), to ' + this.current_seed + ", sending " + this.current_amounts[this.current_sender_seed] + ", status: " + result.status);
-  									if (result.status === 'Finalized') {
-                                        console.log('[DEBUG] Finalized! TX: nonce: ' + this.current_sender_nonces[this.current_sender_seed] + ', from: ' + this.current_sender_seed + '(balance: ' + sender_balance + '), to ' + this.current_seed + ", sending " + this.current_amounts[this.current_sender_seed] + ", tx: " + result.status.asFinalised.toHex());
-										return result.status.asFinalised.toHex();
-  									}
-								});
 
-        } catch(e) {
-        	console.log("[ERROR] BenchmarkStep: " + e);
-        	throw e; // let caller know the promise was rejected with this reason
-    	}
-		
+        // this.currentReceiverSeed = this.getRandomReceiverSeed(this.currentSenderSeed);
+        // let receiver = await this.keyring.addFromUri(this.currentReceiverSeed);
+        // let previous = await this.api.query.balances.freeBalance(receiver.address);
+        // let sender_balance = await this.api.query.balances.freeBalance(this.currentSenderKeyringPair.address);
+        // this.current_sender_nonces[this.currentSenderSeed]++;
+
+
+        // console.log('[DEBUG] Prepared TX: nonce: ' +
+        //     this.current_sender_nonces[this.currentSenderSeed] +
+        //     ', from: ' +
+        //     this.currentSenderSeed +
+        //     '(balances: ' +
+        //     sender_balance +
+        //     '), to '
+        //     + this.currentReceiverSeed +
+        //     ", sending " +
+        //     this.balances[this.currentSenderSeed]);
+
+        let amountToSend = this.amountToSendGlobal;
+        this.amountToSendGlobal++;
+
+        let transfer = this.api.tx.balances.transfer(receiverKeyringPair.address, amountToSend);
+
+
+        let hash = await transfer.sign(this.currentSenderKeyringPair, {nonce: this.currentSenderNonce});
+        let send = await transfer.send();
+        // @ts-ignore
+        console.log(hash.signature.toJSON().signature)
+        this.balances.set(this.currentSenderSeed, this.balances.get(this.currentSenderSeed)!! - amountToSend);
+
+        // sign(this.currentSenderKeyringPair, {nonce: this.currentSenderNonce})
+        //     .send(result => {
+        //         // console.log('[DEBUG] Status of TX: nonce: ' + this.current_sender_nonces[this.currentSenderSeed] + ', from: ' + this.currentSenderSeed + '(balances: ' + sender_balance + '), to ' + this.currentReceiverSeed + ", sending " + this.balances[this.currentSenderSeed] + ", status: " + result.status);
+        //         if (result.status.isFinalized) {
+        //             // console.log('[DEBUG] Finalized! TX: nonce: ' + this.current_sender_nonces[this.currentSenderSeed] + ', from: ' + this.currentSenderSeed + '(balances: ' + sender_balance + '), to ' + this.currentReceiverSeed + ", sending " + this.balances[this.currentSenderSeed] + ", tx: " + result.status.asFinalised.toHex());
+        //             return result.status.asFinalized.toHex();
+        //         }
+        //     })
+        // return await this.api.tx.balances.transfer(
+        //     receiverKeyringPair.address,
+        //     this.balances[this.currentSenderSeed]
+        // )
+        //     .sign(this.currentSenderKeyringPair, {nonce: this.current_sender_nonces[this.currentSenderSeed]})
+        //     .send(result => {
+        //         // console.log('[DEBUG] Status of TX: nonce: ' + this.current_sender_nonces[this.currentSenderSeed] + ', from: ' + this.currentSenderSeed + '(balances: ' + sender_balance + '), to ' + this.currentReceiverSeed + ", sending " + this.balances[this.currentSenderSeed] + ", status: " + result.status);
+        //         if (result.status.isFinalized) {
+        //             // console.log('[DEBUG] Finalized! TX: nonce: ' + this.current_sender_nonces[this.currentSenderSeed] + ', from: ' + this.currentSenderSeed + '(balances: ' + sender_balance + '), to ' + this.currentReceiverSeed + ", sending " + this.balances[this.currentSenderSeed] + ", tx: " + result.status.asFinalised.toHex());
+        //             return result.status.asFinalized.toHex();
+        //         }
+        //     })
+
+        return {code: 10, error: null}
+
     }
 }
 

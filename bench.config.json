@@ -5,24 +5,10 @@
     "processedTransactions": 1000
   },
   "prometheusTelemetry": {
-    "enable": false,
-    "url": "http://127.0.0.1:9091",
-    "user": "admin",
-    "password": "admin",
-    "respCodeBuckets": [
-      200,
-      500
-    ],
-    "trxsDurationBuckets": [
-      10,
-      50,
-      100,
-      200,
-      500
-    ]
+    "enable": false
   },
   "tps": 200,
-  "threadsAmount": 2,
-  "maxActivePromises": 4,
-  "telemetryStepInterval": 10000,
+  "threadsAmount": 1,
+  "maxActivePromises": 1,
+  "telemetryStepInterval": 10000
 }
