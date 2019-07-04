@@ -1,9 +1,6 @@
-import {BenchStep} from "tank.bench-common";
-import {Keyring} from "@polkadot/keyring";
-import {ApiPromise, WsProvider} from "@polkadot/api";
-import {KeyringPair} from "@polkadot/keyring/types";
-import {Balance, Index} from "@polkadot/types";
-import BN = require("bn.js");
+const {BenchCase} = require("tank.bench-common");
+const {Keyring} = require("@polkadot/keyring");
+const {ApiPromise, WsProvider} = require("@polkadot/api");
 
 // const testKeyring = require('@polkadot/keyring/testing');
 // const {hexToU8a, bufferToU8a} = require('@polkadot/util');
@@ -11,31 +8,22 @@ import BN = require("bn.js");
 // const {BN} = require('bn.js');
 
 
-export default class PolkadotModuleBenchStep extends BenchStep {
-    private api!: ApiPromise;
-    private keyring!: Keyring;
-
-    private currentSenderKeyringPair!: KeyringPair;
-    private currentSenderSeed!: number;
-    private currentSenderNonce!: Index;
-
-    private amountToSendGlobal = 1;
-
-    private balances: Map<number, number> = new Map<number, number>();
-
-    async timeout(ms: number) {
+class PolkadotModuleBenchCase extends BenchCase {
+    async timeout(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    private stringSeed(seed: number) {
+    stringSeed(seed) {
         return '//user//' + ("0000" + seed).slice(-4);
     }
 
-    private getRandomSeed() {
+    getRandomSeed() {
         return Math.floor(Math.random() * 1000);
     }
 
-    async asyncConstruct() {
+    async asyncConstruct(threadId) {
+        this.balances = new Map();
+        this.amountToSendGlobal = 0;
         //this.keyring = new testKeyring.default();
         // ed25519 and sr25519
         this.keyring = new Keyring({type: 'sr25519'});
@@ -65,21 +53,21 @@ export default class PolkadotModuleBenchStep extends BenchStep {
 
         this.currentSenderKeyringPair = this.keyring.addFromUri(this.stringSeed(this.currentSenderSeed));
 
-        let balance = <Balance>await this.api.query.balances.freeBalance(this.currentSenderKeyringPair.address);
+        let balance = await this.api.query.balances.freeBalance(this.currentSenderKeyringPair.address);
         this.balances.set(this.currentSenderSeed, balance.toNumber());
     }
 
-    async commitBenchmarkTransaction(uniqueData: any) {
+    async commitTransaction(uniqueData) {
 
         // return {code: 10, error: null};
 
         // switch to next sender after all funds of currentSenderKeyringPair finished
 
-        while (this.balances.get(this.currentSenderSeed)!! <= 1) {
+        while (this.balances.get(this.currentSenderSeed) <= 1) {
             await this.chooseNewSender()
         }
 
-        this.currentSenderNonce = <Index>await this.api.query.system.accountNonce(this.currentSenderKeyringPair.address);
+        this.currentSenderNonce = await this.api.query.system.accountNonce(this.currentSenderKeyringPair.address);
 
 
         // To be sure the receiver and sender are not equal
@@ -114,8 +102,8 @@ export default class PolkadotModuleBenchStep extends BenchStep {
         let hash = await transfer.signAndSend(this.currentSenderKeyringPair, {nonce: this.currentSenderNonce});
         // let send = await transfer.send();
         // @ts-ignore
-        console.log(hash.signature.toJSON().signature)
-        this.balances.set(this.currentSenderSeed, this.balances.get(this.currentSenderSeed)!! - amountToSend);
+        console.log(hash.signature.toJSON().signature);
+        this.balances.set(this.currentSenderSeed, this.balances.get(this.currentSenderSeed) - amountToSend);
 
         // sign(this.currentSenderKeyringPair, {nonce: this.currentSenderNonce})
         //     .send(result => {
@@ -143,3 +131,4 @@ export default class PolkadotModuleBenchStep extends BenchStep {
     }
 }
 
+module.exports = PolkadotModuleBenchCase;
