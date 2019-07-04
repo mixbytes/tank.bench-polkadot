@@ -111,8 +111,8 @@ export default class PolkadotModuleBenchStep extends BenchStep {
         let transfer = this.api.tx.balances.transfer(receiverKeyringPair.address, amountToSend);
 
 
-        let hash = await transfer.sign(this.currentSenderKeyringPair, {nonce: this.currentSenderNonce});
-        let send = await transfer.send();
+        let hash = await transfer.signAndSend(this.currentSenderKeyringPair, {nonce: this.currentSenderNonce});
+        // let send = await transfer.send();
         // @ts-ignore
         console.log(hash.signature.toJSON().signature)
         this.balances.set(this.currentSenderSeed, this.balances.get(this.currentSenderSeed)!! - amountToSend);
