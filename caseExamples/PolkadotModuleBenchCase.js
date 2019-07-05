@@ -102,7 +102,7 @@ class PolkadotModuleBenchCase extends BenchCase {
         let hash = await transfer.signAndSend(this.currentSenderKeyringPair, {nonce: this.currentSenderNonce});
         // let send = await transfer.send();
         // @ts-ignore
-        console.log(hash.signature.toJSON().signature);
+        // console.log(hash.signature.toJSON().signature);
         this.balances.set(this.currentSenderSeed, this.balances.get(this.currentSenderSeed) - amountToSend);
 
         // sign(this.currentSenderKeyringPair, {nonce: this.currentSenderNonce})
