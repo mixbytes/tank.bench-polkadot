@@ -1,17 +1,29 @@
-const {BenchProfile} = require("tank.bench-common");
-const {Keyring} = require("@polkadot/keyring");
-const {ApiPromise, WsProvider} = require("@polkadot/api");
+import {BenchProfile} from "tank.bench-common";
+import {Keyring} from "@polkadot/keyring";
+import {ApiPromise, WsProvider} from "@polkadot/api";
+import {KeyringPair} from "@polkadot/keyring/types";
 
-const TOKENS_TO_SEND = 1;
+const TOKENS_TO_SEND = 0.5;
 
-class PolkadotExampleBenchProfile extends BenchProfile {
+export default class PolkadotBenchProfile extends BenchProfile {
+
+    private api!: ApiPromise;
+    private keyring!: Keyring;
+
+    private threadId!: number;
+
+    private userNoncesArray!: Int32Array;
+    private keyPairs!: Map<number, KeyringPair>;
+
+    private usersConfig: any;
+
 
     // noinspection JSMethodCanBeStatic
-    stringSeed(seed) {
+    private stringSeed(seed: number): string {
         return '//user//' + ("0000" + seed).slice(-4);
     }
 
-    getRandomSeed() {
+    private getRandomSeed(): number {
         let firstSeed = this.benchConfig.usersConfig.firstSeed;
         let lastSeed = this.benchConfig.usersConfig.lastSeed;
 
@@ -19,11 +31,11 @@ class PolkadotExampleBenchProfile extends BenchProfile {
     }
 
     // noinspection JSMethodCanBeStatic
-    getVeryRandomSeed() {
+    private getVeryRandomSeed(): number {
         return Math.floor(Math.random() * this.benchConfig.usersConfig.totalUsersCount);
     }
 
-    async asyncConstruct(threadId) {
+    async asyncConstruct(threadId: number) {
         // ed25519 and sr25519
         this.threadId = threadId;
         this.keyring = new Keyring({type: 'sr25519'});
@@ -32,13 +44,13 @@ class PolkadotExampleBenchProfile extends BenchProfile {
         this.usersConfig = this.benchConfig.usersConfig;
         this.userNoncesArray = new Int32Array(this.benchConfig.usersConfig.userNonces);
 
-        this.keyPairs = new Map();
+        this.keyPairs = new Map<number, KeyringPair>();
         for (let seed = 0; seed < this.usersConfig.totalUsersCount; seed++) {
             this.keyPairs.set(seed, this.keyring.addFromUri(this.stringSeed(seed)));
         }
     }
 
-    getRandomReceiverSeed(senderSeed) {
+    private getRandomReceiverSeed(senderSeed: number) {
         let seed = this.getVeryRandomSeed();
         if (seed === senderSeed)
             seed++;
@@ -48,19 +60,19 @@ class PolkadotExampleBenchProfile extends BenchProfile {
 
     }
 
-    getRandomSenderSeed() {
+    private getRandomSenderSeed() {
         return this.getRandomSeed();
     }
 
-    async commitTransaction(uniqueData) {
+    async commitTransaction(uniqueData: string) {
 
         let senderSeed = this.getRandomSenderSeed();
-        let senderKeyPair = this.keyPairs.get(senderSeed);
+        let senderKeyPair = this.keyPairs.get(senderSeed)!;
 
         let nonce = Atomics.add(this.userNoncesArray, senderSeed - this.usersConfig.firstSeed, 1) + 1;
 
         let receiverSeed = this.getRandomReceiverSeed(senderSeed);
-        let receiverKeyringPair = this.keyPairs.get(receiverSeed);
+        let receiverKeyringPair = this.keyPairs.get(receiverSeed)!;
 
         let transfer = this.api.tx.balances.transfer(receiverKeyringPair.address, TOKENS_TO_SEND);
         await transfer.signAndSend(senderKeyPair, {nonce: nonce});
@@ -70,5 +82,3 @@ class PolkadotExampleBenchProfile extends BenchProfile {
     }
 }
 
-
-module.exports = PolkadotExampleBenchProfile;

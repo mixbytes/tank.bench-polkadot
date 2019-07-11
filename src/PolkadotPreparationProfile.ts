@@ -1,9 +1,11 @@
-import {Preparation} from "tank.bench-common";
+import {PreparationProfile} from "tank.bench-common";
 import {ApiPromise, WsProvider} from "@polkadot/api";
 import {Index} from "@polkadot/types";
 import {Keyring} from "@polkadot/keyring";
 
-export default class PolkadotPreparation extends Preparation {
+export default class PolkadotPreparationProfile extends PreparationProfile {
+
+    static readonly fileName = __filename;
 
     static USERS_COUNT = 1000;
 
@@ -13,7 +15,7 @@ export default class PolkadotPreparation extends Preparation {
     }
 
     async prepare() {
-        let USERS_COUNT = PolkadotPreparation.USERS_COUNT;
+        let USERS_COUNT = PolkadotPreparationProfile.USERS_COUNT;
 
         let api = await ApiPromise.create(new WsProvider(this.moduleConfig.wsUrl));
         let keyring = new Keyring({type: 'sr25519'});
