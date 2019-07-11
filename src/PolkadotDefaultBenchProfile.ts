@@ -2,12 +2,8 @@ import {BenchProfile, BuiltinBenchProfile} from "tank.bench-common";
 import {Keyring} from "@polkadot/keyring";
 import {ApiPromise, WsProvider} from "@polkadot/api";
 import {KeyringPair} from "@polkadot/keyring/types";
-import {Balance, Index} from "@polkadot/types";
-import BN = require("bn.js");
 
 const TOKENS_TO_SEND = 1;
-const TRANS_FROM_ONE_USER = 254;
-const USERS_COUNT = 1000;
 
 export default class PolkadotDefaultBenchProfile extends BenchProfile {
 
@@ -19,31 +15,29 @@ export default class PolkadotDefaultBenchProfile extends BenchProfile {
     private api!: ApiPromise;
     private keyring!: Keyring;
 
-    private currentSenderKeyringPair!: KeyringPair;
-    private currentSenderSeed!: number;
-    private currentSenderNonce!: Index;
-    private currentSenderSent!: number;
-
-    private balances: Map<number, number> = new Map<number, number>();
-
-    private firstSeed = 0;
-    private lastSeed = USERS_COUNT - 1;
-
     private threadId!: number;
+
+    private userNoncesArray!: Int32Array;
+    private keyPairs!: Map<number, KeyringPair>;
+
+    private usersConfig: any;
+
 
     // noinspection JSMethodCanBeStatic
     private stringSeed(seed: number): string {
         return '//user//' + ("0000" + seed).slice(-4);
     }
 
-    // noinspection JSMethodCanBeStatic
     private getRandomSeed(): number {
-        return Math.floor(Math.random() * (this.lastSeed - this.firstSeed + 1)) + this.firstSeed;
+        let firstSeed = this.benchConfig.usersConfig.firstSeed;
+        let lastSeed = this.benchConfig.usersConfig.lastSeed;
+
+        return Math.floor(Math.random() * (lastSeed - firstSeed + 1)) + firstSeed;
     }
 
     // noinspection JSMethodCanBeStatic
     private getVeryRandomSeed(): number {
-        return Math.floor(Math.random() * USERS_COUNT);
+        return Math.floor(Math.random() * this.benchConfig.usersConfig.totalUsersCount);
     }
 
     async asyncConstruct(threadId: number) {
@@ -52,76 +46,41 @@ export default class PolkadotDefaultBenchProfile extends BenchProfile {
         this.keyring = new Keyring({type: 'sr25519'});
         this.api = await ApiPromise.create(new WsProvider(this.benchConfig.moduleConfig.wsUrl));
 
-        if (this.benchConfig.commonConfig.sharding.shards > 0 && this.benchConfig.commonConfig.sharding.shardId >= 0) {
-            let seedsInShard = USERS_COUNT / this.benchConfig.commonConfig.sharding.shards;
-            this.firstSeed = Math.floor(seedsInShard * this.benchConfig.commonConfig.sharding.shardId);
-            this.lastSeed = Math.floor(this.firstSeed + seedsInShard) - 1
+        this.usersConfig = this.benchConfig.usersConfig;
+        this.userNoncesArray = new Int32Array(this.benchConfig.usersConfig.userNonces);
+
+        this.keyPairs = new Map<number, KeyringPair>();
+        for (let seed = 0; seed < this.usersConfig.totalUsersCount; seed++) {
+            this.keyPairs.set(seed, this.keyring.addFromUri(this.stringSeed(seed)));
         }
-
-        let seedsInThread = (this.lastSeed - this.firstSeed) / this.benchConfig.commonConfig.threadsAmount;
-        if (seedsInThread < 1)
-            throw new Error("too many threads for this amount of shards. Not implemented yet");
-        this.firstSeed += Math.floor(seedsInThread * threadId);
-        this.lastSeed = Math.floor(this.firstSeed + seedsInThread) - 1;
-
-        this.logger.log(`The ${threadId} thread will use ${this.firstSeed}...${this.lastSeed} accounts`);
-        await this.chooseNewSender()
     }
 
-    private getRandomReceiverSeed() {
+    private getRandomReceiverSeed(senderSeed: number) {
         let seed = this.getVeryRandomSeed();
-        if (seed === this.currentSenderSeed)
+        if (seed === senderSeed)
             seed++;
-        if (seed >= USERS_COUNT - 1)
+        if (seed >= this.usersConfig.totalUsersCount - 1)
             seed = 0;
         return seed;
 
     }
 
     private getRandomSenderSeed() {
-        return this.getRandomSeedNotEq(this.currentSenderSeed);
+        return this.getRandomSeed();
     }
 
-    private getRandomSeedNotEq(old: number) {
-        let seed = this.getRandomSeed();
-        if (seed === old)
-            seed++;
-        if (seed > this.lastSeed)
-            seed = this.firstSeed;
-        return seed;
-    }
+    async commitTransaction(uniqueData: string) {
 
-    async chooseNewSender() {
-        this.currentSenderSeed = this.getRandomSenderSeed();
+        let senderSeed = this.getRandomSenderSeed();
+        let senderKeyPair = this.keyPairs.get(senderSeed)!;
 
-        this.currentSenderKeyringPair = this.keyring.addFromUri(this.stringSeed(this.currentSenderSeed));
-        this.currentSenderNonce = <Index>await this.api.query.system.accountNonce(this.currentSenderKeyringPair.address);
-        this.currentSenderSent = 0;
+        let nonce = Atomics.add(this.userNoncesArray, senderSeed - this.usersConfig.firstSeed, 1) + 1;
 
-        let balance = <Balance>await this.api.query.balances.freeBalance(this.currentSenderKeyringPair.address);
-        this.balances.set(this.currentSenderSeed, balance.toNumber());
+        let receiverSeed = this.getRandomReceiverSeed(senderSeed);
+        let receiverKeyringPair = this.keyPairs.get(receiverSeed)!;
 
-        this.logger.log(`The ${this.threadId} thread selected ${this.currentSenderSeed} sender. Nonce: ${this.currentSenderNonce.toNumber()}`);
-
-    }
-
-    async commitTransaction(uniqueData: any) {
-        if (this.currentSenderSent >= TRANS_FROM_ONE_USER) {
-            await this.chooseNewSender()
-        }
-
-        let receiverSeed = this.getRandomReceiverSeed();
-        let receiverKeyringPair = await this.keyring.addFromUri(this.stringSeed(receiverSeed));
-
-        let amountToSend = TOKENS_TO_SEND;
-        this.currentSenderNonce = new Index(this.currentSenderNonce.add(new BN(1)));
-        let nonce = this.currentSenderNonce;
-        this.currentSenderSent++;
-
-        let transfer = this.api.tx.balances.transfer(receiverKeyringPair.address, amountToSend);
-        await transfer.signAndSend(this.currentSenderKeyringPair, {nonce: nonce});
-
-        this.balances.set(this.currentSenderSeed, this.balances.get(this.currentSenderSeed)!! - amountToSend);
+        let transfer = this.api.tx.balances.transfer(receiverKeyringPair.address, TOKENS_TO_SEND);
+        await transfer.signAndSend(senderKeyPair, {nonce: nonce});
 
         return {code: 10, error: null}
 
