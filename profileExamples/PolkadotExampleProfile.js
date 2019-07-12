@@ -9,6 +9,8 @@ const stringSeed = (seed) => {
     return '//user//' + ("0000" + seed).slice(-4);
 };
 
+// The base profile that just send one token from some accounts to another ones.
+// The account names are //user//0000 to //user//0999
 class Bench extends BenchProfile {
 
     getRandomSeed() {
@@ -41,7 +43,7 @@ class Bench extends BenchProfile {
         let seed = this.getVeryRandomSeed();
         if (seed === senderSeed)
             seed++;
-        if (seed >= this.usersConfig.totalUsersCount - 1)
+        if (seed >= USERS_COUNT - 1)
             seed = 0;
         return seed;
 
@@ -56,7 +58,7 @@ class Bench extends BenchProfile {
         let senderSeed = this.getRandomSenderSeed();
         let senderKeyPair = this.keyPairs.get(senderSeed);
 
-        let nonce = Atomics.add(this.userNoncesArray, senderSeed - this.usersConfig.firstSeed, 1) + 1;
+        let nonce = Atomics.add(this.userNoncesArray, senderSeed - this.usersConfig.firstSeed, 1);
 
         let receiverSeed = this.getRandomReceiverSeed(senderSeed);
         let receiverKeyringPair = this.keyPairs.get(receiverSeed);
@@ -65,10 +67,8 @@ class Bench extends BenchProfile {
         await transfer.signAndSend(senderKeyPair, {nonce: nonce});
 
         return {code: 10, error: null}
-
     }
 }
-
 
 class Preparation extends PreparationProfile {
 

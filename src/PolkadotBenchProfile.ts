@@ -2,8 +2,9 @@ import {BenchProfile} from "tank.bench-common";
 import {Keyring} from "@polkadot/keyring";
 import {ApiPromise, WsProvider} from "@polkadot/api";
 import {KeyringPair} from "@polkadot/keyring/types";
+import {Balance, Index} from "@polkadot/types";
 
-const TOKENS_TO_SEND = 0.5;
+const TOKENS_TO_SEND = 1;
 
 export default class PolkadotBenchProfile extends BenchProfile {
 
@@ -69,16 +70,15 @@ export default class PolkadotBenchProfile extends BenchProfile {
         let senderSeed = this.getRandomSenderSeed();
         let senderKeyPair = this.keyPairs.get(senderSeed)!;
 
-        let nonce = Atomics.add(this.userNoncesArray, senderSeed - this.usersConfig.firstSeed, 1) + 1;
+        let nonce = Atomics.add(this.userNoncesArray, senderSeed - this.usersConfig.firstSeed, 1);
 
         let receiverSeed = this.getRandomReceiverSeed(senderSeed);
         let receiverKeyringPair = this.keyPairs.get(receiverSeed)!;
 
-        let transfer = this.api.tx.balances.transfer(receiverKeyringPair.address, TOKENS_TO_SEND);
-        await transfer.signAndSend(senderKeyPair, {nonce: nonce});
+        let transfer = this.api.tx.balances.transfer(receiverKeyringPair.address, new Balance(TOKENS_TO_SEND));
+        await transfer.signAndSend(senderKeyPair, {nonce: new Index(nonce)});
 
         return {code: 10, error: null}
-
     }
 }
 
