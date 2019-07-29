@@ -1,6 +1,6 @@
 {
   "name": "tank.bench-polkadot",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "index.ts",
   "scripts": {
@@ -19,11 +19,11 @@
   },
   "homepage": "https://github.com/mixbytes/tank.bench-polkadot#readme",
   "dependencies": {
-    "@polkadot/api": "^0.81.1",
-    "@polkadot/keyring": "^0.93.1",
-    "@polkadot/types": "^0.81.1",
-    "@types/node": "^12.6.2",
-    "@types/node-fetch": "^2.3.7",
+    "@polkadot/api": "0.81.1",
+    "@polkadot/keyring": "0.94.1",
+    "@polkadot/types": "0.81.1",
+    "@types/node": "^12.6.8",
+    "@types/node-fetch": "^2.5.0",
     "@types/text-encoding": "0.0.35",
     "node-fetch": "^2.6.0",
     "polkadot": "^1.0.0",
