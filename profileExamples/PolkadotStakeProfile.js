@@ -1,6 +1,7 @@
 const {BenchProfile, PreparationProfile} = require("tank.bench-common");
 const {Keyring} = require("@polkadot/keyring");
 const {ApiPromise, WsProvider} = require("@polkadot/api");
+const config = require("../dist/config/configSchema").default;
 
 // Users with special functions
 const SUPER_USERS_COUNT = 0;
@@ -168,7 +169,8 @@ class Preparation extends PreparationProfile {
 module.exports = {
     fileName: __filename,
     benchProfile: Bench,
-    preparationProfile: Preparation
+    preparationProfile: Preparation,
+    configSchema: config
 };
 
 
