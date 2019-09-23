@@ -1,19 +1,17 @@
 import {BlockchainModule, BuiltinProfile} from "tank.bench-common";
 import Constants from "./constants/Constants";
-import configSchema from "./config/configSchema";
 import PolkadotDefaultProfile from "./PolkadotDefaultProfile";
+import configSchema from "./config/configSchema";
 
 export default class PolkadotModule extends BlockchainModule {
 
-    getConfigSchema(): any {
-        return configSchema;
+    getBuiltinProfiles(): BuiltinProfile[] {
+        return [PolkadotDefaultProfile];
     }
 
-    getBuiltinProfiles(): BuiltinProfile[] {
-        return [{
-            name: "default",
-            profile: PolkadotDefaultProfile
-        }];
+
+    getConfigSchema(): any {
+        return configSchema;
     }
 
     getDefaultConfigFilePath(): string | null {

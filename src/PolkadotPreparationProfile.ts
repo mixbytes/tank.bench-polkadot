@@ -1,7 +1,7 @@
 import {PreparationProfile} from "tank.bench-common";
 import {ApiPromise, WsProvider} from "@polkadot/api";
-import {Index} from "@polkadot/types";
 import {Keyring} from "@polkadot/keyring";
+import {Index} from "@polkadot/types/interfaces";
 
 export default class PolkadotPreparationProfile extends PreparationProfile {
 
@@ -17,7 +17,10 @@ export default class PolkadotPreparationProfile extends PreparationProfile {
     async prepare() {
         let USERS_COUNT = PolkadotPreparationProfile.USERS_COUNT;
 
-        let api = await ApiPromise.create(new WsProvider(this.moduleConfig.wsUrl));
+        let provider = new WsProvider(this.moduleConfig.wsUrl);
+
+        let api = await ApiPromise.create({provider});
+
         let keyring = new Keyring({type: 'sr25519'});
 
         const [chain, nodeName, nodeVersion] = await Promise.all([

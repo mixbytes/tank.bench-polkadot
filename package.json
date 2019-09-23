@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js -- --profile=profileExamples/example/dist/profile.js"
   },
   "repository": {
     "type": "git",
@@ -19,19 +19,28 @@
   },
   "homepage": "https://github.com/mixbytes/tank.bench-polkadot#readme",
   "dependencies": {
-    "@polkadot/api": "0.81.1",
-    "@polkadot/keyring": "0.94.1",
-    "@polkadot/types": "0.81.1",
-    "@types/node": "^12.6.8",
-    "@types/node-fetch": "^2.5.0",
+    "@polkadot/api": "0.92.1",
+    "@polkadot/keyring": "1.4.1",
+    "@polkadot/types": "0.92.1",
+    "@types/node": "^12.7.5",
+    "@types/node-fetch": "^2.5.1",
     "@types/text-encoding": "0.0.35",
     "node-fetch": "^2.6.0",
     "polkadot": "^1.0.0",
-    "tank.bench-common": "4.0.2",
+    "tank.bench-common": "4.0.6",
     "text-encoding": "^0.7.0"
   },
+  "resolutions": {
+    "@polkadot/api": "0.92.1",
+    "@polkadot/keyring": "1.4.1",
+    "@polkadot/types": "0.92.1"
+  },
   "devDependencies": {
-    "source-map-support": "^0.5.12",
-    "typescript": "^3.5.3"
+    "awesome-typescript-loader": "^5.2.1",
+    "source-map-support": "^0.5.13",
+    "typescript": "^3.6.3",
+    "uglifyjs-webpack-plugin": "^2.2.0",
+    "webpack": "^4.40.2",
+    "webpack-cli": "^3.3.9"
   }
 }

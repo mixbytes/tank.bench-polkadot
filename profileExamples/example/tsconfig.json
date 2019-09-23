@@ -7,15 +7,6 @@
     "sourceMap": true,
     "declaration": true,
     "target": "es6",
-    "strict": true,
-    "outDir": "./dist"
-  },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "profileExamples",
-    "dist"
-  ]
+    "strict": true
+  }
 }

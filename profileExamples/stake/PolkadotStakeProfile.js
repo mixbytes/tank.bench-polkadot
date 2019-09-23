@@ -1,7 +1,6 @@
 const {BenchProfile, PreparationProfile} = require("tank.bench-common");
 const {Keyring} = require("@polkadot/keyring");
 const {ApiPromise, WsProvider} = require("@polkadot/api");
-const config = require("../dist/config/configSchema").default;
 
 // Users with special functions
 const SUPER_USERS_COUNT = 0;
@@ -9,6 +8,8 @@ const SUPER_USERS_COUNT = 0;
 const TOTAL_USERS_COUNT = 100;
 
 const USERS_COUNT = TOTAL_USERS_COUNT - SUPER_USERS_COUNT;
+
+const WS_URL = "ws://127.0.0.1:9944";
 
 const stringSeed = (seed) => {
     return '//user//' + ("0000" + seed).slice(-4);
@@ -28,7 +29,7 @@ class Bench extends BenchProfile {
     async asyncConstruct(threadId, benchConfig) {
         // ed25519 and sr25519
         this.keyring = new Keyring({type: 'sr25519'});
-        this.api = await ApiPromise.create(new WsProvider(benchConfig.moduleConfig.wsUrl));
+        this.api = await ApiPromise.create(new WsProvider(WS_URL));
 
         this.usersConfig = benchConfig.usersConfig;
         this.userNoncesArray = new Int32Array(benchConfig.usersConfig.userNonces);
@@ -87,7 +88,7 @@ class Preparation extends PreparationProfile {
     }
 
     async prepare(commonConfig, moduleConfig) {
-        this.api = await ApiPromise.create(new WsProvider(moduleConfig.wsUrl));
+        this.api = await ApiPromise.create(new WsProvider(WS_URL));
         this.keyring = new Keyring({type: 'sr25519'});
 
         const [chain, nodeName, nodeVersion] = await Promise.all([
@@ -169,8 +170,7 @@ class Preparation extends PreparationProfile {
 module.exports = {
     fileName: __filename,
     benchProfile: Bench,
-    preparationProfile: Preparation,
-    configSchema: config
+    preparationProfile: Preparation
 };
 
 
