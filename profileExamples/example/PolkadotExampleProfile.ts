@@ -7,8 +7,6 @@ import {Index} from "@polkadot/types/interfaces";
 const TOKENS_TO_SEND = 1;
 const USERS_COUNT = 1000;
 
-const WS_URL = "ws://insert_url_here:9944";
-
 // The base profile that just send one token from some accounts to another ones.
 // The account names are //user//0000 to //user//0999
 class Bench extends BenchProfile {
@@ -46,7 +44,7 @@ class Bench extends BenchProfile {
         this.threadId = threadId;
         this.keyring = new Keyring({type: 'sr25519'});
 
-        let provider = new WsProvider(WS_URL);
+        let provider = new WsProvider(this.benchConfig.moduleConfig.wsUrl);
 
         this.api = await ApiPromise.create({provider});
 
@@ -98,7 +96,7 @@ class Preparation extends PreparationProfile {
     }
 
     async prepare() {
-        let provider = new WsProvider(WS_URL);
+        let provider = new WsProvider(this.moduleConfig.wsUrl);
 
         let api = await ApiPromise.create({provider});
 
@@ -162,6 +160,14 @@ class Preparation extends PreparationProfile {
 const profile: Profile = {
     benchProfile: Bench,
     preparationProfile: Preparation,
+    configSchema: {
+        wsUrl: {
+            arg: 'polkadot.wsUrl',
+            format: String,
+            default: null,
+            doc: "WS URL"
+        },
+    }
 };
 
 export default profile;

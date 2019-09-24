@@ -6,8 +6,6 @@ import {Index} from "@polkadot/types/interfaces";
 
 const USERS_COUNT = 100;
 
-const WS_URL = "ws://insert_url_here:9944";
-
 const stringSeed = (seed: number) => {
     return '//user//' + ("0000" + seed).slice(-4);
 };
@@ -36,7 +34,7 @@ class Bench extends BenchProfile {
         // ed25519 and sr25519
         this.keyring = new Keyring({type: 'sr25519'});
 
-        let provider = new WsProvider(WS_URL);
+        let provider = new WsProvider(this.benchConfig.moduleConfig.wsUrl);
 
         this.api = await ApiPromise.create({provider});
 
@@ -108,7 +106,7 @@ class Preparation extends PreparationProfile {
     }
 
     async prepare(commonConfig: any, moduleConfig: any) {
-        let provider = new WsProvider(WS_URL);
+        let provider = new WsProvider(this.moduleConfig.wsUrl);
 
         this.api = await ApiPromise.create({provider});
         this.keyring = new Keyring({type: 'sr25519'});
@@ -190,6 +188,14 @@ class Preparation extends PreparationProfile {
 const profile: Profile = {
     benchProfile: Bench,
     preparationProfile: Preparation,
+    configSchema: {
+        wsUrl: {
+            arg: 'polkadot.wsUrl',
+            format: String,
+            default: null,
+            doc: "WS URL"
+        },
+    }
 };
 
 export default profile;

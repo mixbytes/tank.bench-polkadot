@@ -39,9 +39,6 @@ jspm_packages/
 # TypeScript v1 declaration files
 typings/
 
-# dist from typescript
-dist/
-
 # Optional npm cache directory
 .npm
 
@@ -63,3 +60,4 @@ dist/
 # next.js build output
 .next
 
+/dist/
