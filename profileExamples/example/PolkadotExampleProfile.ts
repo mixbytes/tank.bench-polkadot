@@ -92,8 +92,6 @@ class Bench extends BenchProfile {
 
 class Preparation extends PreparationProfile {
 
-    static USERS_COUNT = 1000;
-
     // noinspection JSMethodCanBeStatic
     private stringSeed(seed: number): string {
         return '//user//' + ("0000" + seed).slice(-4);

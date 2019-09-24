@@ -2,13 +2,9 @@ import {BenchProfile, PreparationProfile, Profile} from "tank.bench-common";
 import {Keyring} from "@polkadot/keyring";
 import {ApiPromise, WsProvider} from "@polkadot/api";
 import {KeyringPair} from "@polkadot/keyring/types";
+import {Index} from "@polkadot/types/interfaces";
 
-// Users with special functions
-const SUPER_USERS_COUNT = 0;
-// Any users
-const TOTAL_USERS_COUNT = 100;
-
-const USERS_COUNT = TOTAL_USERS_COUNT - SUPER_USERS_COUNT;
+const USERS_COUNT = 100;
 
 const WS_URL = "ws://insert_url_here:9944";
 
@@ -82,8 +78,10 @@ class Preparation extends PreparationProfile {
     private userNoncesArray!: Int32Array;
     private keyPairs!: Map<number, KeyringPair>;
 
-    private firstSeed = 0;
-    private lastSeed = 0;
+    // noinspection JSMethodCanBeStatic
+    private stringSeed(seed: number): string {
+        return '//user//' + ("0000" + seed).slice(-4);
+    }
 
     getNonce(seed: number): Promise<number> {
         return new Promise(async resolve => {
@@ -96,7 +94,7 @@ class Preparation extends PreparationProfile {
     async bond(accountSeed: number, controllerSeed: number) {
 
         let accountKeyPair = this.keyPairs.get(accountSeed)!;
-        let accountNonce = Atomics.add(this.userNoncesArray, accountSeed - this.firstSeed, 1);
+        let accountNonce = Atomics.add(this.userNoncesArray, accountSeed, 1);
 
         let controllerKeyPair = this.keyPairs.get(controllerSeed)!;
 
@@ -123,30 +121,31 @@ class Preparation extends PreparationProfile {
 
         this.logger.log(`Bench is connected to chain ${chain} using ${nodeName} v${nodeVersion}`);
 
-        let firstSeed = 0;
-        let lastSeed = USERS_COUNT - 1;
+        let firstSeed: number = 0;
+        let lastSeed: number = USERS_COUNT - 1;
 
-        if (commonConfig.sharding.shards > 0 && commonConfig.sharding.shardId >= 0) {
-            let seedsInShard = USERS_COUNT / commonConfig.sharding.shards;
-            firstSeed = Math.floor(seedsInShard * commonConfig.sharding.shardId);
+        if (this.commonConfig.sharding.shards > 0 && this.commonConfig.sharding.shardId >= 0) {
+            let seedsInShard = USERS_COUNT / this.commonConfig.sharding.shards;
+            firstSeed = Math.floor(seedsInShard * this.commonConfig.sharding.shardId);
             lastSeed = Math.floor(firstSeed + seedsInShard) - 1
         }
 
         let seedsCount = lastSeed - firstSeed + 1;
 
-        let userNonces = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * (seedsCount + SUPER_USERS_COUNT));
+        let userNonces = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * seedsCount);
         this.userNoncesArray = new Int32Array(userNonces);
 
-        let getNoncesPromises = [];
+        let getNoncesPromises = new Array<Promise<number>>();
 
         this.logger.log("Fetching nonces for accounts...");
 
         for (let seed = firstSeed; seed <= lastSeed; seed++) {
-            getNoncesPromises.push(this.getNonce(seed))
-        }
-
-        for (let seed = USERS_COUNT + 1; seed <= TOTAL_USERS_COUNT; seed++) {
-            getNoncesPromises.push(this.getNonce(seed))
+            getNoncesPromises.push(new Promise<number>(async resolve => {
+                let stringSeed = this.stringSeed(seed);
+                let keys = this.keyring.addFromUri(stringSeed);
+                let nonce = <Index>await this.api.query.system.accountNonce(keys.address);
+                resolve(nonce.toNumber());
+            }));
         }
 
         let nonces = await Promise.all(getNoncesPromises);
@@ -156,15 +155,12 @@ class Preparation extends PreparationProfile {
             this.userNoncesArray[i] = nonce
         });
 
-        this.keyPairs = new Map();
-        for (let seed = firstSeed; seed <= lastSeed; seed++) {
-            this.keyPairs.set(seed, this.keyring.addFromUri(stringSeed(seed)));
+        this.logger.log("Staking tokens on accounts...");
+        this.keyPairs = new Map<number, KeyringPair>();
+        for (let seed = 0; seed < USERS_COUNT; seed++) {
+            this.keyPairs.set(seed, this.keyring.addFromUri(this.stringSeed(seed)));
         }
 
-        this.firstSeed = firstSeed;
-        this.lastSeed = lastSeed;
-
-        this.logger.log("Staking tokens on accounts...");
         for (let seed = firstSeed; seed <= lastSeed; seed += 2) {
             if (seed + 1 > lastSeed)
                 break;
