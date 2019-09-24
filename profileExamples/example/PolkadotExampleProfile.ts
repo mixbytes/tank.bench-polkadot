@@ -7,7 +7,7 @@ import {Index} from "@polkadot/types/interfaces";
 const TOKENS_TO_SEND = 1;
 const USERS_COUNT = 1000;
 
-const WS_URL = "ws://167.71.35.164:9944";
+const WS_URL = "ws://insert_url_here:9944";
 
 // The base profile that just send one token from some accounts to another ones.
 // The account names are //user//0000 to //user//0999

@@ -1,6 +1,7 @@
-const {BenchProfile, PreparationProfile} = require("tank.bench-common");
-const {Keyring} = require("@polkadot/keyring");
-const {ApiPromise, WsProvider} = require("@polkadot/api");
+import {BenchProfile, PreparationProfile, Profile} from "tank.bench-common";
+import {Keyring} from "@polkadot/keyring";
+import {ApiPromise, WsProvider} from "@polkadot/api";
+import {KeyringPair} from "@polkadot/keyring/types";
 
 // Users with special functions
 const SUPER_USERS_COUNT = 0;
@@ -9,9 +10,9 @@ const TOTAL_USERS_COUNT = 100;
 
 const USERS_COUNT = TOTAL_USERS_COUNT - SUPER_USERS_COUNT;
 
-const WS_URL = "ws://127.0.0.1:9944";
+const WS_URL = "ws://insert_url_here:9944";
 
-const stringSeed = (seed) => {
+const stringSeed = (seed: number) => {
     return '//user//' + ("0000" + seed).slice(-4);
 };
 
@@ -19,17 +20,29 @@ const stringSeed = (seed) => {
 // The account names are //user//0000 to //user//0999
 class Bench extends BenchProfile {
 
-    getRandomSeed() {
+    private api!: ApiPromise;
+    private keyring!: Keyring;
+
+    private userNoncesArray!: Int32Array;
+    private keyPairs!: Map<number, KeyringPair>;
+
+    private usersConfig: any;
+
+
+    getRandomSeed(): number {
         let firstSeed = this.usersConfig.firstSeed;
         let lastSeed = this.usersConfig.lastSeed;
 
         return Math.floor(Math.random() * (lastSeed - firstSeed + 1)) + firstSeed;
     }
 
-    async asyncConstruct(threadId, benchConfig) {
+    async asyncConstruct(threadId: number, benchConfig: any) {
         // ed25519 and sr25519
         this.keyring = new Keyring({type: 'sr25519'});
-        this.api = await ApiPromise.create(new WsProvider(WS_URL));
+
+        let provider = new WsProvider(WS_URL);
+
+        this.api = await ApiPromise.create({provider});
 
         this.usersConfig = benchConfig.usersConfig;
         this.userNoncesArray = new Int32Array(benchConfig.usersConfig.userNonces);
@@ -40,13 +53,13 @@ class Bench extends BenchProfile {
         }
     }
 
-    getRandomSenderSeed() {
+    getRandomSenderSeed(): number {
         return this.getRandomSeed();
     }
 
-    async commitTransaction() {
+    async commitTransaction(uniqueData: string, threadId: number, benchConfig: any) {
         let senderSeed = this.getRandomSenderSeed();
-        let senderKeyPair = this.keyPairs.get(senderSeed);
+        let senderKeyPair = this.keyPairs.get(senderSeed)!;
 
         let nonce = Atomics.add(this.userNoncesArray, senderSeed - this.usersConfig.firstSeed, 1);
 
@@ -63,20 +76,29 @@ class Bench extends BenchProfile {
 
 class Preparation extends PreparationProfile {
 
-    getNonce(seed) {
+    private api!: ApiPromise;
+    private keyring!: Keyring;
+
+    private userNoncesArray!: Int32Array;
+    private keyPairs!: Map<number, KeyringPair>;
+
+    private firstSeed = 0;
+    private lastSeed = 0;
+
+    getNonce(seed: number): Promise<number> {
         return new Promise(async resolve => {
             let keys = this.keyring.addFromUri(stringSeed(seed));
-            let nonce = await this.api.query.system.accountNonce(keys.address);
+            let nonce: any = await this.api.query.system.accountNonce(keys.address);
             resolve(nonce.toNumber());
         });
     }
 
-    async bond(accountSeed, controllerSeed) {
+    async bond(accountSeed: number, controllerSeed: number) {
 
-        let accountKeyPair = this.keyPairs.get(accountSeed);
+        let accountKeyPair = this.keyPairs.get(accountSeed)!;
         let accountNonce = Atomics.add(this.userNoncesArray, accountSeed - this.firstSeed, 1);
 
-        let controllerKeyPair = this.keyPairs.get(controllerSeed);
+        let controllerKeyPair = this.keyPairs.get(controllerSeed)!;
 
         let bond = this.api.tx.staking.bond(
             controllerKeyPair.address,
@@ -84,11 +106,13 @@ class Preparation extends PreparationProfile {
             "Staked"
         );
 
-        return await bond.signAndSend(accountKeyPair, {nonce: accountNonce});
+        return bond.signAndSend(accountKeyPair, {nonce: accountNonce});
     }
 
-    async prepare(commonConfig, moduleConfig) {
-        this.api = await ApiPromise.create(new WsProvider(WS_URL));
+    async prepare(commonConfig: any, moduleConfig: any) {
+        let provider = new WsProvider(WS_URL);
+
+        this.api = await ApiPromise.create({provider});
         this.keyring = new Keyring({type: 'sr25519'});
 
         const [chain, nodeName, nodeVersion] = await Promise.all([
@@ -167,11 +191,13 @@ class Preparation extends PreparationProfile {
     }
 }
 
-module.exports = {
-    fileName: __filename,
+const profile: Profile = {
     benchProfile: Bench,
-    preparationProfile: Preparation
+    preparationProfile: Preparation,
 };
+
+export default profile;
+
 
 
 
