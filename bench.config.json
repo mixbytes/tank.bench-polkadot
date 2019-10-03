@@ -8,7 +8,7 @@
     "enable": false
   },
   "tps": 100,
-  "threadsAmount": 1,
+  "threadsAmount": 8,
   "maxActivePromises": 8,
   "telemetryStepInterval": 10000
 }
