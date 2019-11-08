@@ -1,6 +1,6 @@
 {
   "name": "tank.bench-polkadot",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "description": "",
   "main": "index.ts",
   "scripts": {
@@ -20,11 +20,11 @@
   },
   "homepage": "https://github.com/mixbytes/tank.bench-polkadot#readme",
   "dependencies": {
-    "@polkadot/api": "0.92.1",
-    "@polkadot/keyring": "1.4.1",
-    "@polkadot/types": "0.92.1",
-    "@types/node": "^12.7.5",
-    "@types/node-fetch": "^2.5.1",
+    "@polkadot/api": "0.95.2",
+    "@polkadot/keyring": "1.6.1",
+    "@polkadot/types": "0.95.2",
+    "@types/node": "^12.12.6",
+    "@types/node-fetch": "^2.5.3",
     "@types/text-encoding": "0.0.35",
     "node-fetch": "^2.6.0",
     "polkadot": "^1.0.0",
@@ -32,16 +32,16 @@
     "text-encoding": "^0.7.0"
   },
   "resolutions": {
-    "@polkadot/api": "0.92.1",
-    "@polkadot/keyring": "1.4.1",
-    "@polkadot/types": "0.92.1"
+    "@polkadot/api": "0.95.2",
+    "@polkadot/keyring": "1.6.1",
+    "@polkadot/types": "0.95.2"
   },
   "devDependencies": {
     "awesome-typescript-loader": "^5.2.1",
-    "source-map-support": "^0.5.13",
-    "typescript": "^3.6.3",
+    "source-map-support": "^0.5.16",
+    "typescript": "^3.7.2",
     "uglifyjs-webpack-plugin": "^2.2.0",
-    "webpack": "^4.40.2",
-    "webpack-cli": "^3.3.9"
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10"
   }
 }
