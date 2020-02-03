@@ -1,0 +1,33 @@
+{
+  "logLevel": 3,
+  "stopOn": {
+    "error": "stop",
+    "processedTransactions": 300
+  },
+  "prometheusTelemetry": {
+    "enable": false,
+    "url": "http://127.0.0.1:9091",
+    "user": "admin",
+    "password": "admin",
+    "respCodeBuckets": [
+      100,
+      200,
+      300,
+      400,
+      500
+    ],
+    "trxsDurationBuckets": [
+      10,
+      50,
+      100,
+      200,
+      500,
+      2000,
+      10000
+    ]
+  },
+  "telemetryStepInterval": 1000,
+  "tps": 123.4,
+  "threadsAmount": 2,
+  "maxActivePromises": 6
+}
